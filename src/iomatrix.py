@@ -9,13 +9,17 @@ class IoMatrix:
         Convert a NumPy array to a LaTeX matrix/vector string.
 
         Parameters:
-            arr (np.ndarray): Input array.
             fmt (str): Format string for each element (default: 3 significant digits).
             env (str): LaTeX environment: matrix, pmatrix, bmatrix, vmatrix, Vmatrix.
 
         Returns:
             str: LaTeX code.
         """
+
+        allowed_envs = {"matrix", "pmatrix", "bmatrix", "vmatrix", "Vmatrix"}
+        if env not in allowed_envs:
+            raise ValueError(f"Invalid LaTeX environment '{env}'. Must be one of {allowed_envs}.")
+
         arr = self.nparray
 
         if arr.ndim == 1:
