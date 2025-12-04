@@ -1,6 +1,11 @@
 import numpy as np
 import pytest
-from src import IoMatrix
+from unittest.mock import mock_open, patch
+from src import (
+    extract_matrices_from_latex_text,
+    extract_matrices_from_latex_file,
+    IoMatrix,
+)
 
 
 # -----------------------------
@@ -157,3 +162,91 @@ def test_inconsistent_row_lengths():
     io = IoMatrix(arr)
     with pytest.raises(Exception):
         io.numpy_to_latex()
+
+# -----------------------------
+# Test matrix reading
+# -----------------------------   
+
+def test_extract_single_bmatrix():
+    latex = r"""
+        \begin{bmatrix}
+            1 & 2 \\
+            3 & 4
+        \end{bmatrix}
+    """
+    matrices = extract_matrices_from_latex_text(latex)
+    assert len(matrices) == 1
+    expected = np.array([[1, 2], [3, 4]])
+    assert np.array_equal(matrices[0].nparray, expected)
+
+def test_extract_multiple_matrices():
+    latex = r"""
+        \begin{pmatrix}
+            1 & 0
+        \end{pmatrix}
+
+        \begin{bmatrix}
+            2 & 3 \\
+            4 & 5
+        \end{bmatrix}
+    """
+    matrices = extract_matrices_from_latex_text(latex)
+    assert len(matrices) == 2
+    assert np.array_equal(matrices[0].nparray, np.array([[1, 0]]))
+    assert np.array_equal(matrices[1].nparray, np.array([[2, 3], [4, 5]]))
+
+def test_strip_comments():
+    latex = r"""
+        % This is a comment
+        \begin{matrix}
+            1 & 2 \\ 3 & 4
+        \end{matrix}
+        % another comment
+    """
+    matrices = extract_matrices_from_latex_text(latex)
+    assert len(matrices) == 1
+    assert np.array_equal(matrices[0].nparray, np.array([[1, 2], [3, 4]]))
+
+def test_spaces_and_newlines():
+    latex = r"""
+        \begin{bmatrix}
+            10 &   20     \\    
+            30   &    40
+        \end{bmatrix}
+    """
+    matrices = extract_matrices_from_latex_text(latex)
+    expected = np.array([[10, 20], [30, 40]])
+    assert np.array_equal(matrices[0].nparray, expected)
+
+def test_extract_from_file():
+    matrices = extract_matrices_from_latex_file("example.tex")
+
+    expected = [np.array([[1, 2, 3], [4, 5, 6]]), np.array([[7,8], [9,10]])]
+    assert len(matrices) == 2
+    assert np.array_equal(matrices[0].nparray, expected[0])
+    assert np.array_equal(matrices[1].nparray, expected[1])
+
+def test_invalid_float_raises():
+    latex = r"""
+        \begin{bmatrix}
+            1 & x \\
+            2 & 3
+        \end{bmatrix}
+    """
+    with pytest.raises(ValueError):
+        extract_matrices_from_latex_text(latex)
+
+def test_invalid_format_raises():
+    latex = r"""
+        \begin{bmatrix}
+            1 \\
+            2 & 3
+        \end{bmatrix}
+    """
+    with pytest.raises(ValueError):
+        extract_matrices_from_latex_text(latex)
+
+def test_no_matrices_found():
+    latex = "No matrix here"
+    matrices = extract_matrices_from_latex_text(latex)
+    assert matrices == []
