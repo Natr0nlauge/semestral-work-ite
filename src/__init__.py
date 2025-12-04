@@ -1,1 +1,1 @@
-from .iomatrix import IoMatrix
+from .iomatrix import IoMatrix, extract_matrices_from_latex_text, extract_matrices_from_latex_file
