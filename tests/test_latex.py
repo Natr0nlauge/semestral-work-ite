@@ -41,7 +41,7 @@ def test_matrix_to_latex_basic():
 # EDGE CASES
 # -----------------------------
 
-def test_empty_vector():
+def test_latex_empty_vector():
     arr = np.array([])
     io = IoMatrix(arr)
     expected = (
@@ -52,7 +52,7 @@ def test_empty_vector():
     assert io.numpy_to_latex() == expected
 
 
-def test_empty_matrix():
+def test_latex_empty_matrix():
     arr = np.array([[]])
     io = IoMatrix(arr)
     expected = (
@@ -63,7 +63,7 @@ def test_empty_matrix():
     assert io.numpy_to_latex() == expected
 
 
-def test_single_element_vector():
+def test_latex_single_element_vector():
     arr = np.array([42])
     io = IoMatrix(arr)
     expected = (
@@ -74,7 +74,7 @@ def test_single_element_vector():
     assert io.numpy_to_latex() == expected
 
 
-def test_single_element_matrix():
+def test_latex_single_element_matrix():
     arr = np.array([[7]])
     io = IoMatrix(arr)
     expected = (
@@ -85,7 +85,7 @@ def test_single_element_matrix():
     assert io.numpy_to_latex() == expected
 
 
-def test_negative_numbers():
+def test_latex_negative_numbers():
     arr = np.array([[-1, -2.5]])
     io = IoMatrix(arr)
     expected = (
@@ -96,19 +96,31 @@ def test_negative_numbers():
     assert io.numpy_to_latex(fmt="{:.3g}") == expected
 
 
-def test_large_small_values():
+def test_latex_large_small_values():
     arr = np.array([[1e10, 5e-12]])
     io = IoMatrix(arr)
     result = io.numpy_to_latex()
     assert "1e+10" in result
     assert "5e-12" in result
 
+def test_latex_nan_inf_values():
+    arr = np.array([np.nan, np.inf, -np.inf])
+    io = IoMatrix(arr)
+    result = io.numpy_to_latex()
+    expected = (
+        "\\begin{matrix}\n"
+        "nan \\\\\n"
+        "inf \\\\\n"
+        "-inf\n"
+        "\\end{matrix}"
+    )
+    assert result == expected
 
 # -----------------------------
 # FORMAT AND ENVIRONMENT TESTS
 # -----------------------------
 
-def test_custom_format():
+def test_latex_custom_format():
     arr = np.array([[1.2345, 9.8765]])
     io = IoMatrix(arr)
     result = io.numpy_to_latex(fmt="{:.2f}")
@@ -120,7 +132,7 @@ def test_custom_format():
     assert result == expected
 
 
-def test_different_environment():
+def test_latex_different_environment():
     arr = np.array([[1, 2]])
     io = IoMatrix(arr)
     result = io.numpy_to_latex(env="pmatrix")
@@ -132,31 +144,31 @@ def test_different_environment():
 # ERROR CONDITION TESTS
 # -----------------------------
 
-def test_3d_array_raises():
+def test_latex_3d_array_raises():
     arr = np.zeros((2, 2, 2))
     io = IoMatrix(arr)
     with pytest.raises(ValueError):
         io.numpy_to_latex()
 
-def test_non_numeric_array_raises():
+def test_latex_non_numeric_array_raises():
     arr = np.array([["a", "b"]])
     io = IoMatrix(arr)
     with pytest.raises(ValueError):
         # formatting should fail inside fmt.format(x)
         io.numpy_to_latex()
 
-def test_invalid_format_array_raises():
+def test_latex_invalid_format_array_raises():
     arr = np.array([[1, 2]])
     io = IoMatrix(arr)
     with pytest.raises(ValueError):
         # formatting should fail inside fmt.format(x)
         io.numpy_to_latex(env="nonsense")
 
-def test_invalid_input_type():
+def test_latex_invalid_input_type():
     with pytest.raises(AttributeError):  # nparray not a numpy array
         IoMatrix("hello").numpy_to_latex()
 
-def test_inconsistent_row_lengths():
+def test_latex_inconsistent_row_lengths():
     # NumPy normally blocks jagged arrays unless dtype=object
     arr = np.array([[1, 2], [3]], dtype=object)
     io = IoMatrix(arr)
@@ -167,7 +179,7 @@ def test_inconsistent_row_lengths():
 # Test matrix reading
 # -----------------------------   
 
-def test_extract_single_bmatrix():
+def test_latex_extract_single_bmatrix():
     latex = r"""
         \begin{bmatrix}
             1 & 2 \\
@@ -179,7 +191,7 @@ def test_extract_single_bmatrix():
     expected = np.array([[1, 2], [3, 4]])
     assert np.array_equal(matrices[0].nparray, expected)
 
-def test_extract_multiple_matrices():
+def test_latex_extract_multiple_matrices():
     latex = r"""
         \begin{pmatrix}
             1 & 0
@@ -195,7 +207,7 @@ def test_extract_multiple_matrices():
     assert np.array_equal(matrices[0].nparray, np.array([[1, 0]]))
     assert np.array_equal(matrices[1].nparray, np.array([[2, 3], [4, 5]]))
 
-def test_strip_comments():
+def test_latex_strip_comments():
     latex = r"""
         % This is a comment
         \begin{matrix}
@@ -207,7 +219,7 @@ def test_strip_comments():
     assert len(matrices) == 1
     assert np.array_equal(matrices[0].nparray, np.array([[1, 2], [3, 4]]))
 
-def test_spaces_and_newlines():
+def test_latex_spaces_and_newlines():
     latex = r"""
         \begin{bmatrix}
             10 &   20     \\    
@@ -218,7 +230,7 @@ def test_spaces_and_newlines():
     expected = np.array([[10, 20], [30, 40]])
     assert np.array_equal(matrices[0].nparray, expected)
 
-def test_extract_from_file():
+def test_latex_extract_from_file():
     matrices = extract_matrices_from_latex_file("example.tex")
 
     expected = [np.array([[1, 2, 3], [4, 5, 6]]), np.array([[7,8], [9,10]])]
@@ -226,7 +238,7 @@ def test_extract_from_file():
     assert np.array_equal(matrices[0].nparray, expected[0])
     assert np.array_equal(matrices[1].nparray, expected[1])
 
-def test_invalid_float_raises():
+def test_latex_invalid_float_raises():
     latex = r"""
         \begin{bmatrix}
             1 & x \\
@@ -236,7 +248,7 @@ def test_invalid_float_raises():
     with pytest.raises(ValueError):
         extract_matrices_from_latex_text(latex)
 
-def test_invalid_format_raises():
+def test_latex_invalid_format_raises():
     latex = r"""
         \begin{bmatrix}
             1 \\
@@ -246,7 +258,7 @@ def test_invalid_format_raises():
     with pytest.raises(ValueError):
         extract_matrices_from_latex_text(latex)
 
-def test_no_matrices_found():
+def test_latex_no_matrices_found():
     latex = "No matrix here"
     matrices = extract_matrices_from_latex_text(latex)
     assert matrices == []

@@ -1,5 +1,6 @@
 import numpy as np
 import re
+import json
 
 class IoMatrix:
     def __init__(self, nparray):
@@ -16,6 +17,7 @@ class IoMatrix:
         Returns:
             str: LaTeX code.
         """
+        # TODO inf should be displayed in latex with the fitting symbol
 
         allowed_envs = {"matrix", "pmatrix", "bmatrix", "vmatrix", "Vmatrix"}
         if env not in allowed_envs:
@@ -37,6 +39,43 @@ class IoMatrix:
 
         return f"\\begin{{{env}}}\n{body}\n\\end{{{env}}}"
     
+    def numpy_to_json(self, fmt="{:.3g}", indent=2):
+        """
+        Convert a NumPy array to a JSON string.
+
+        Parameters:
+            fmt (str): Format string for each element (default: 3 significant digits).
+            indent (int): JSON indentation level for pretty-printing.
+
+        Returns:
+            str: JSON representation of the array.
+        """
+
+        arr = self.nparray
+
+        if arr.ndim == 1:
+            # 1D -> list
+            data = [fmt.format(x) for x in arr]
+        elif arr.ndim == 2:
+            # 2D -> list of lists
+            data = [[fmt.format(x) for x in row] for row in arr]
+        else:
+            raise ValueError("Only 1D or 2D arrays are supported.")
+
+        # Convert formatted strings back to numeric if possible
+        def maybe_number(val):
+            try:
+                return float(val)
+            except ValueError:
+                return val
+
+        if arr.ndim == 1:
+            data = [maybe_number(x) for x in data]
+        else:
+            data = [[maybe_number(x) for x in row] for row in data]
+
+        return json.dumps(data, indent=indent)
+    
 
 
 
@@ -52,6 +91,8 @@ def extract_matrices_from_latex_text(latex_content):
     Returns:
         list of np.array: List of matrices found as NumPy arrays.
     """
+    # TODO what about reading inf or nan?
+
     # Remove comments to avoid parsing issues
     latex_content = re.sub(r'%.*', '', latex_content)
 
