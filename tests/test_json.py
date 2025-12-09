@@ -1,7 +1,11 @@
 import json
 import numpy as np
 import pytest
-from src import IoMatrix
+from src import (
+    IoMatrix,
+    extract_arrays_from_json_text, 
+    extract_arrays_from_json_file,
+)
 
 
 # -----------------------------
@@ -12,7 +16,7 @@ def test_json_vector_basic():
     arr = np.array([1.2345, 2.3456, 3.4567])
     io = IoMatrix(arr)
     result = json.loads(io.numpy_to_json())
-    assert result == [1.23, 2.35, 3.46]
+    assert result == [[1.23, 2.35, 3.46]]
 
 
 def test_json_matrix_basic():
@@ -30,7 +34,7 @@ def test_json_empty_vector():
     arr = np.array([])
     io = IoMatrix(arr)
     result = json.loads(io.numpy_to_json())
-    assert result == []
+    assert result == [[]]
 
 
 def test_json_empty_matrix():
@@ -44,7 +48,7 @@ def test_json_single_element_vector():
     arr = np.array([42])
     io = IoMatrix(arr)
     result = json.loads(io.numpy_to_json())
-    assert result == [42]
+    assert result == [[42]]
 
 
 def test_json_single_element_matrix():
@@ -81,9 +85,9 @@ def test_json_nan_inf_values():
 
     result = json.loads(io.numpy_to_json())
 
-    assert np.isnan(result[0])
-    assert result[1] == float("inf")
-    assert result[2] == float("-inf")
+    assert np.isnan(result[0][0])
+    assert result[0][1] == float("inf")
+    assert result[0][2] == float("-inf")
 
 
 # -----------------------------
@@ -94,7 +98,7 @@ def test_json_custom_format():
     arr = np.array([1.2345])
     io = IoMatrix(arr)
     result = json.loads(io.numpy_to_json(fmt="{:.2f}"))
-    assert result == [1.23]
+    assert result == [[1.23]]
 
 
 def test_json_indent_applied():
@@ -140,3 +144,75 @@ def test_json_inconsistent_row_lengths():
     io = IoMatrix(arr)
     with pytest.raises(Exception):
         io.numpy_to_json()
+
+
+def test_extract_row_vector():
+    text = "[[1, 2, 3]]"
+    arrays = extract_arrays_from_json_text(text)
+    assert len(arrays) == 1
+    assert np.array_equal(arrays[0].nparray, np.array([1.0, 2.0, 3.0]))
+
+def test_extract_column_vector():
+    text = "[[1], [2], [3]]"
+    arrays = extract_arrays_from_json_text(text)
+    assert len(arrays) == 1
+    assert np.array_equal(arrays[0].nparray, np.array([[1.0], [2.0], [3.0]]))
+
+
+def test_extract_2d_array():
+    text = "[[1, 2], [3, 4]]"
+    arrays = extract_arrays_from_json_text(text)
+    assert len(arrays) == 1
+    assert np.array_equal(arrays[0].nparray, np.array([[1.0, 2.0], [3.0, 4.0]]))
+
+
+def test_extract_multiple_arrays():
+    text = """
+    [
+        [[1, 2, 3]],
+        [[4, 5], [6, 7]]
+    ]
+    """
+    arrays = extract_arrays_from_json_text(text)
+
+    assert len(arrays) == 2
+    assert np.array_equal(arrays[0].nparray, np.array([1.0, 2.0, 3.0]))
+    assert np.array_equal(arrays[1].nparray, np.array([[4.0, 5.0], [6.0, 7.0]]))
+
+
+def test_parse_string_numbers():
+    text = '[["1.2", "3.4", "5"]]'
+    arrays = extract_arrays_from_json_text(text)
+    expected = np.array([1.2, 3.4, 5.0])
+    assert np.array_equal(arrays[0].nparray, expected)
+
+
+def test_parse_inf_nan():
+    text = '[["inf", "-inf", "nan"]]'
+    arrays = extract_arrays_from_json_text(text)
+    arr = arrays[0].nparray
+
+    assert np.isinf(arr[0]) and arr[0] > 0
+    assert np.isinf(arr[1]) and arr[1] < 0
+    assert np.isnan(arr[2])
+
+
+def test_invalid_numeric_string():
+    text = '[["abc", "123"]]'
+    with pytest.raises(ValueError):
+        extract_arrays_from_json_text(text)
+
+
+def test_invalid_structure_mixed_dimensionality():
+    text = '[1, [2, 3]]'  # Mix of non-list and list → should fail
+    with pytest.raises(ValueError):
+        extract_arrays_from_json_text(text)
+
+
+def test_file_loading(tmp_path):
+    fp = tmp_path / "test.json"
+    fp.write_text("[[1, 2, 3]]")
+
+    arrays = extract_arrays_from_json_file(fp)
+    assert len(arrays) == 1
+    assert np.array_equal(arrays[0].nparray, np.array([1.0, 2.0, 3.0]))

@@ -70,7 +70,7 @@ class IoMatrix:
                 return val
 
         if arr.ndim == 1:
-            data = [maybe_number(x) for x in data]
+            data = [[maybe_number(x) for x in data]]
         else:
             data = [[maybe_number(x) for x in row] for row in data]
 
@@ -89,7 +89,7 @@ def extract_matrices_from_latex_text(latex_content):
         latex_content (str): LaTeX document content.
 
     Returns:
-        list of np.array: List of matrices found as NumPy arrays.
+        list of IoMatrix: List of found matrices/vectors.
     """
     # TODO what about reading inf or nan?
 
@@ -122,10 +122,91 @@ def extract_matrices_from_latex_file(file_path):
         file_path (str): Path to the LaTeX file.
 
     Returns:
-        list of np.array: List of matrices found.
+        list of IoMatrix: List of found matrices/vectors.
     """
     with open(file_path, 'r', encoding='utf-8') as f:
         latex_content = f.read()
     
     # Use the text-based function
     return extract_matrices_from_latex_text(latex_content)
+
+
+def extract_arrays_from_json_text(json_content):
+    """
+    Expected format:
+      Vector: [[1, 2, 3]]
+      Matrix: [[1, 2], [3, 4]]
+      Multiple arrays: [ [[...]], [[...]] ]
+      
+    Parameters:
+        json_content (str): JSON text.
+
+    Returns:
+        list of np.array: Each extracted NumPy array.
+    """
+
+    # Parse JSON
+    data = json.loads(json_content)
+
+    # Normalize:
+    # If the root is a single nested array representing one array,
+    # wrap it into a list so everything is processed uniformly.
+    if not (isinstance(data, list) and all(isinstance(x, list) for x in data) and
+            all(isinstance(el, list) for el in data[0])):
+        # Means root is a single array (vector or matrix)
+        data = [data]
+
+    arrays = []
+
+    for entry in data:
+
+        # Helper: convert numeric strings ("1.23", "inf") cleanly
+        def parse_item(x):
+            if isinstance(x, (int, float)):
+                return float(x)
+            if isinstance(x, str):
+                lx = x.strip().lower()
+                if lx in ("inf", "+inf", "infinity"):
+                    return float("inf")
+                if lx in ("-inf", "-infinity"):
+                    return -float("inf")
+                if lx == "nan":
+                    return float("nan")
+                try:
+                    return float(x)
+                except ValueError:
+                    raise ValueError(f"Invalid numeric value: {x}")
+            raise ValueError(f"Unsupported JSON type: {type(x)}")
+        
+        rows = []
+        for row in entry:
+            if not isinstance(row, list):
+                raise ValueError(f"Invalid format - array expected: {row}")
+            else:
+                parsed_row = np.array([parse_item(x) for x in row], dtype = float)
+                rows.append(parsed_row)
+
+        arr = np.array(rows, dtype=float)
+
+        if arr.ndim == 2 and arr.shape[0] == 1:
+            arr = arr.flatten()
+        arrays.append(IoMatrix(arr))
+
+    return arrays
+
+
+def extract_arrays_from_json_file(file_path):
+    """
+    Reads a JSON file and extracts arrays as NumPy arrays.
+
+    Parameters:
+        file_path (str): Path to a JSON file.
+
+    Returns:
+        list of IoMatrix: List of found matrices/vectors
+    """
+
+    with open(file_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    return extract_arrays_from_json_text(content)
