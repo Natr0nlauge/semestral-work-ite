@@ -1,9 +1,12 @@
 import numpy as np
 import re
 import json
+import numbers
 
 class IoMatrix:
     def __init__(self, nparray):
+        if not isinstance(nparray, np.ndarray):
+            raise TypeError("IoMatrix expects a NumPy array.")
         self.nparray = nparray
 
     def numpy_to_latex(self, fmt="{:.3g}", env="matrix"): #, arr, ):
@@ -25,14 +28,23 @@ class IoMatrix:
 
         arr = self.nparray
 
+        def fmt_value(x):
+            if not isinstance(x, numbers.Number):
+                raise ValueError(f"Invalid type of array element '{x}'")
+            if np.isinf(x):
+                return r"\infty" if x > 0 else r"-\infty"
+            if np.isnan(x):
+                return r"\mathrm{NaN}"
+            return fmt.format(x)
+
         if arr.ndim == 1:
             # Convert 1D vector to a column vector
-            body = " \\\\\n".join(fmt.format(x) for x in arr)
+            body = " \\\\\n".join(fmt_value(x) for x in arr)
         elif arr.ndim == 2:
             # Convert 2D array to matrix
             rows = []
             for row in arr:
-                rows.append(" & ".join(fmt.format(x) for x in row))
+                rows.append(" & ".join(fmt_value(x) for x in row))
             body = " \\\\\n".join(rows)
         else:
             raise ValueError("Only 1D or 2D arrays are supported.")

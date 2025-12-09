@@ -109,9 +109,9 @@ def test_latex_nan_inf_values():
     result = io.numpy_to_latex()
     expected = (
         "\\begin{matrix}\n"
-        "nan \\\\\n"
-        "inf \\\\\n"
-        "-inf\n"
+        "\mathrm{NaN} \\\\\n"
+        "\infty \\\\\n"
+        "-\infty\n"
         "\\end{matrix}"
     )
     assert result == expected
