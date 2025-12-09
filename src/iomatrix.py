@@ -75,6 +75,17 @@ class IoMatrix:
             data = [[maybe_number(x) for x in row] for row in data]
 
         return json.dumps(data, indent=indent)
+
+    def numpy_to_csv(self, filename, fmt="{:.3g}"):
+        """
+        Save a NumPy 2D array to a CSV file using a specified significant-digit format.
+        Example fmt: "{:.3g}", "{:.5g}", "{:.2f}", etc.
+        """
+        # Convert Python's format-string style "{:.3g}" to NumPy's format "%.3g"
+        numpy_fmt = fmt.replace("{:", "%").replace("}", "")
+        
+        np.savetxt(filename, self.nparray, delimiter=",", fmt=numpy_fmt)
+
     
 
 
@@ -91,7 +102,6 @@ def extract_matrices_from_latex_text(latex_content):
     Returns:
         list of IoMatrix: List of found matrices/vectors.
     """
-    # TODO what about reading inf or nan?
 
     # Remove comments to avoid parsing issues
     latex_content = re.sub(r'%.*', '', latex_content)
@@ -195,6 +205,7 @@ def extract_arrays_from_json_text(json_content):
     return arrays
 
 
+
 def extract_arrays_from_json_file(file_path):
     """
     Reads a JSON file and extracts arrays as NumPy arrays.
@@ -210,3 +221,12 @@ def extract_arrays_from_json_file(file_path):
         content = f.read()
 
     return extract_arrays_from_json_text(content)
+
+def extract_matrix_from_csv(file_path):
+    """
+    Load a CSV file into a NumPy 2D array.
+    """
+    array = np.loadtxt(file_path, delimiter=",")
+    if array.size == 0:
+        raise ValueError("Empty CSV file")
+    return IoMatrix(array)
