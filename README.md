@@ -127,6 +127,12 @@ from iomatrix import extract_matrix_from_csv
 matrix = extract_matrix_from_csv("matrix.csv")
 ```
 
+### Testing
+
+```
+See [tests.md](tests.md) for a detailed explanation of the testing strategy.
+```
+
 ---
 
 ## Limitations or Known Issues
