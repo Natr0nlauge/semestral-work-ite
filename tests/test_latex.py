@@ -9,7 +9,7 @@ from src import (
 
 
 # -----------------------------
-# BASIC FUNCTIONALITY TESTS
+# BASIC WRITING FUNCTIONALITY
 # -----------------------------
 
 def test_vector_to_latex_basic():
@@ -38,7 +38,7 @@ def test_matrix_to_latex_basic():
 
 
 # -----------------------------
-# EDGE CASES
+# WRITING EDGE CASES
 # -----------------------------
 
 def test_latex_empty_vector():
@@ -141,7 +141,7 @@ def test_latex_different_environment():
 
 
 # -----------------------------
-# ERROR CONDITION TESTS
+# WRITING ERROR CONDITION TESTS
 # -----------------------------
 
 def test_latex_3d_array_raises():
@@ -176,7 +176,7 @@ def test_latex_inconsistent_row_lengths():
         io.to_latex()
 
 # -----------------------------
-# Test matrix reading
+# TEST BASIC READING
 # -----------------------------   
 
 def test_latex_extract_single_bmatrix():
@@ -219,6 +219,10 @@ def test_latex_strip_comments():
     assert len(matrices) == 1
     assert np.array_equal(matrices[0].nparray, np.array([[1, 2], [3, 4]]))
 
+# -----------------------------
+# TEST READING EDGE CASES
+# -----------------------------  
+
 def test_latex_spaces_and_newlines():
     latex = r"""
         \begin{bmatrix}
@@ -237,6 +241,15 @@ def test_latex_extract_from_file():
     assert len(matrices) == 2
     assert np.array_equal(matrices[0].nparray, expected[0])
     assert np.array_equal(matrices[1].nparray, expected[1])
+
+def test_latex_no_matrices_found():
+    latex = "No matrix here"
+    matrices = extract_arrays_from_latex_text(latex)
+    assert matrices == []
+
+# -----------------------------
+# TEST READING ERROR CONDITIONS
+# -----------------------------  
 
 def test_latex_invalid_float_raises():
     latex = r"""
@@ -258,7 +271,3 @@ def test_latex_invalid_format_raises():
     with pytest.raises(ValueError):
         extract_arrays_from_latex_text(latex)
 
-def test_latex_no_matrices_found():
-    latex = "No matrix here"
-    matrices = extract_arrays_from_latex_text(latex)
-    assert matrices == []

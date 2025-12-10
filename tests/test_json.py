@@ -9,7 +9,7 @@ from src import (
 
 
 # -----------------------------
-# BASIC FUNCTIONALITY TESTS
+# BASIC WRITING FUNCTIONALITY
 # -----------------------------
 
 def test_json_vector_basic():
@@ -27,7 +27,7 @@ def test_json_matrix_basic():
 
 
 # -----------------------------
-# EDGE CASES
+# WRITING EDGE CASES
 # -----------------------------
 
 def test_json_empty_vector():
@@ -91,7 +91,7 @@ def test_json_nan_inf_values():
 
 
 # -----------------------------
-# FORMAT TESTS
+# WRITING FORMAT TESTS
 # -----------------------------
 
 def test_json_custom_format():
@@ -116,7 +116,7 @@ def test_json_invalid_format_raises():
 
 
 # -----------------------------
-# ERROR CONDITION TESTS
+# WRITING ERROR CONDITION TESTS
 # -----------------------------
 
 def test_json_3d_array_raises():
@@ -145,6 +145,9 @@ def test_json_inconsistent_row_lengths():
     with pytest.raises(Exception):
         io.to_json()
 
+# -----------------------------
+# TEST BASIC READING
+# -----------------------------
 
 def test_extract_row_vector():
     text = "[[1, 2, 3]]"
@@ -180,6 +183,18 @@ def test_extract_multiple_arrays():
     assert np.array_equal(arrays[1].nparray, np.array([[4.0, 5.0], [6.0, 7.0]]))
 
 
+def test_file_loading(tmp_path):
+    fp = tmp_path / "test.json"
+    fp.write_text("[[1, 2, 3]]")
+
+    arrays = extract_arrays_from_json_file(fp)
+    assert len(arrays) == 1
+    assert np.array_equal(arrays[0].nparray, np.array([[1.0, 2.0, 3.0]]))
+
+# -----------------------------
+# TEST READING EDGE CASES
+# -----------------------------
+
 def test_parse_string_numbers():
     text = '[["1.2", "3.4", "5"]]'
     arrays = extract_arrays_from_json_text(text)
@@ -196,6 +211,9 @@ def test_parse_inf_nan():
     assert np.isinf(arr[0][1]) and arr[0][1] < 0
     assert np.isnan(arr[0][2])
 
+# -----------------------------
+# TEST READING ERROR CONDITIONS
+# -----------------------------
 
 def test_invalid_numeric_string():
     text = '[["abc", "123"]]'
@@ -209,10 +227,3 @@ def test_invalid_structure_mixed_dimensionality():
         extract_arrays_from_json_text(text)
 
 
-def test_file_loading(tmp_path):
-    fp = tmp_path / "test.json"
-    fp.write_text("[[1, 2, 3]]")
-
-    arrays = extract_arrays_from_json_file(fp)
-    assert len(arrays) == 1
-    assert np.array_equal(arrays[0].nparray, np.array([[1.0, 2.0, 3.0]]))

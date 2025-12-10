@@ -9,6 +9,10 @@ from src import (
     extract_matrix_from_csv
 )
 
+# -----------------------------
+# TEST BASIC WRITING
+# -----------------------------
+
 def test_numpy_to_csv_calls_savetxt_with_correct_params():
     arr = np.array([[1.23456, 7.89]])
     io = IoMatrix(arr)
@@ -23,6 +27,9 @@ def test_numpy_to_csv_calls_savetxt_with_correct_params():
         fmt="%.3g",
     )
 
+# -----------------------------
+# TEST WRITING FORMAT
+# -----------------------------
 
 @pytest.mark.parametrize(
     "fmt, expected",
@@ -64,6 +71,10 @@ def test_numpy_to_csv_writes_correct_csv_content():
     expected = "1.23,7.89\n0.00123,1.23e+04"
     assert content == expected
 
+# -----------------------------
+# TEST WRITING EDGE CASES
+# -----------------------------
+
 def test_numpy_to_csv_empty_array():
     arr = np.array([]).reshape(0, 0)
     io = IoMatrix(arr)
@@ -77,6 +88,23 @@ def test_numpy_to_csv_empty_array():
             content = f.read().strip()
 
     assert content == ""
+
+def test_numpy_to_csv_nan_inf():
+    arr = np.array([[np.nan, np.inf, -np.inf]])
+    io = IoMatrix(arr)
+
+    with tempfile.TemporaryDirectory() as td:
+        path = os.path.join(td, "vals.csv")
+        io.to_csv(path)
+
+        with open(path) as f:
+            content = f.read().strip()
+
+    assert content == "nan,inf,-inf"
+
+# -----------------------------
+# TEST WRITING ERROR CONDITIONS
+# -----------------------------
 
 def test_numpy_to_csv_invalid_format_string():
     arr = np.array([[1.23]])
@@ -107,19 +135,6 @@ def test_numpy_to_csv_permission_error(tmp_path):
     with pytest.raises((PermissionError, IsADirectoryError)):
         io.to_csv(str(invalid_path))
 
-def test_numpy_to_csv_nan_inf():
-    arr = np.array([[np.nan, np.inf, -np.inf]])
-    io = IoMatrix(arr)
-
-    with tempfile.TemporaryDirectory() as td:
-        path = os.path.join(td, "vals.csv")
-        io.to_csv(path)
-
-        with open(path) as f:
-            content = f.read().strip()
-
-    assert content == "nan,inf,-inf"
-
 def test_numpy_to_csv_large_array(tmp_path):
     arr = np.random.rand(1000, 1000)
     io = IoMatrix(arr)
@@ -131,7 +146,9 @@ def test_numpy_to_csv_large_array(tmp_path):
     assert path.stat().st_size > 0
 
 
-# Test reading
+# -----------------------------
+# TEST BASIC READING
+# -----------------------------
 
 def test_extract_matrix_from_csv_basic():
     csv = "1.0,2.0\n3.0,4.0\n"
@@ -172,6 +189,10 @@ def test_extract_matrix_from_csv_single_value():
 
     assert io.nparray == 42
 
+# -----------------------------
+# TEST READING EDGE CASES
+# -----------------------------
+
 def test_extract_matrix_from_csv_empty_file():
     with tempfile.TemporaryDirectory() as td:
         path = os.path.join(td, "empty.csv")
@@ -179,6 +200,10 @@ def test_extract_matrix_from_csv_empty_file():
 
         with pytest.raises(ValueError):
             extract_matrix_from_csv(path)
+
+# -----------------------------
+# TEST READING ERROR CONDITIONS 
+# -----------------------------
 
 def test_extract_matrix_from_csv_invalid_numbers():
     csv = "1.0,abc,3.0\n"
