@@ -347,7 +347,7 @@ def run_from_command_line():
     try:
         result = extract_matrix_from_file(file_path)
 
-        # Normalize result → always a list of IoMatrix
+        # Normalize result -> always a list of IoMatrix
         matrices = result if isinstance(result, list) else [result]
         print(f"Found matrices: {len(result)}")
 
