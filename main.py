@@ -3,8 +3,6 @@ import numpy as np
 import src
 import json
 
-# TODO Make the json reading more robust
-
 text = """
         [[1, 2, 3]]
     """

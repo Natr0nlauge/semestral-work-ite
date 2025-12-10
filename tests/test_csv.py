@@ -14,7 +14,7 @@ def test_numpy_to_csv_calls_savetxt_with_correct_params():
     io = IoMatrix(arr)
 
     with patch("numpy.savetxt") as mock_save:
-        io.numpy_to_csv("file.csv", fmt="{:.3g}")
+        io.to_csv("file.csv", fmt="{:.3g}")
 
     mock_save.assert_called_once_with(
         "file.csv",
@@ -37,7 +37,7 @@ def test_numpy_to_csv_format_conversion(fmt, expected):
     io = IoMatrix(arr)
 
     with patch("numpy.savetxt") as mock_save:
-        io.numpy_to_csv("out.csv", fmt=fmt)
+        io.to_csv("out.csv", fmt=fmt)
 
     mock_save.assert_called_once_with(
         "out.csv",
@@ -56,7 +56,7 @@ def test_numpy_to_csv_writes_correct_csv_content():
 
     with tempfile.TemporaryDirectory() as td:
         path = os.path.join(td, "matrix.csv")
-        io.numpy_to_csv(path, fmt="{:.3g}")
+        io.to_csv(path, fmt="{:.3g}")
 
         with open(path, "r") as f:
             content = f.read().strip()
@@ -70,7 +70,7 @@ def test_numpy_to_csv_empty_array():
 
     with tempfile.TemporaryDirectory() as td:
         path = os.path.join(td, "empty.csv")
-        io.numpy_to_csv(path)
+        io.to_csv(path)
 
         # File should exist but be empty
         with open(path) as f:
@@ -84,7 +84,7 @@ def test_numpy_to_csv_invalid_format_string():
 
     # This becomes '%BADFORMAT'
     with pytest.raises(ValueError):
-        io.numpy_to_csv("tests\\x.csv", fmt="{:BADFORMAT}")
+        io.to_csv("tests\\x.csv", fmt="{:BADFORMAT}")
 
 def test_numpy_to_csv_non_string_format():
     arr = np.array([[1]])
@@ -92,7 +92,7 @@ def test_numpy_to_csv_non_string_format():
 
     with pytest.raises(AttributeError):
         # calling .replace on non-string will cause an AttributeError
-        io.numpy_to_csv("tests\\x.csv", fmt=123)
+        io.to_csv("tests\\x.csv", fmt=123)
 
 def test_numpy_to_csv_permission_error(tmp_path):
     arr = np.array([[1.2]])
@@ -105,7 +105,7 @@ def test_numpy_to_csv_permission_error(tmp_path):
     # Windows -> PermissionError
     # Unix    -> IsADirectoryError (subclass of OSError)
     with pytest.raises((PermissionError, IsADirectoryError)):
-        io.numpy_to_csv(str(invalid_path))
+        io.to_csv(str(invalid_path))
 
 def test_numpy_to_csv_nan_inf():
     arr = np.array([[np.nan, np.inf, -np.inf]])
@@ -113,7 +113,7 @@ def test_numpy_to_csv_nan_inf():
 
     with tempfile.TemporaryDirectory() as td:
         path = os.path.join(td, "vals.csv")
-        io.numpy_to_csv(path)
+        io.to_csv(path)
 
         with open(path) as f:
             content = f.read().strip()
@@ -125,7 +125,7 @@ def test_numpy_to_csv_large_array(tmp_path):
     io = IoMatrix(arr)
 
     path = tmp_path / "large.csv"
-    io.numpy_to_csv(str(path))
+    io.to_csv(str(path))
 
     assert path.exists()
     assert path.stat().st_size > 0
@@ -157,7 +157,7 @@ def test_extract_matrix_from_csv_single_row():
 
         io = extract_matrix_from_csv(path)
 
-    expected = np.array([5, 6, 7])
+    expected = np.array([[5, 6, 7]])
     np.testing.assert_array_equal(io.nparray, expected)
 
 def test_extract_matrix_from_csv_single_value():

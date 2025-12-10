@@ -9,7 +9,7 @@ class IoMatrix:
             raise TypeError("IoMatrix expects a NumPy array.")
         self.nparray = nparray
 
-    def numpy_to_latex(self, fmt="{:.3g}", env="matrix"): #, arr, ):
+    def to_latex(self, fmt="{:.3g}", env="matrix"): #, arr, ):
         """
         Convert a NumPy array to a LaTeX matrix/vector string.
 
@@ -20,7 +20,6 @@ class IoMatrix:
         Returns:
             str: LaTeX code.
         """
-        # TODO inf should be displayed in latex with the fitting symbol
 
         allowed_envs = {"matrix", "pmatrix", "bmatrix", "vmatrix", "Vmatrix"}
         if env not in allowed_envs:
@@ -38,8 +37,8 @@ class IoMatrix:
             return fmt.format(x)
 
         if arr.ndim == 1:
-            # Convert 1D vector to a column vector
-            body = " \\\\\n".join(fmt_value(x) for x in arr)
+            # Convert 1D vector to a row vector
+            body = " & ".join(fmt_value(x) for x in arr)
         elif arr.ndim == 2:
             # Convert 2D array to matrix
             rows = []
@@ -51,7 +50,7 @@ class IoMatrix:
 
         return f"\\begin{{{env}}}\n{body}\n\\end{{{env}}}"
     
-    def numpy_to_json(self, fmt="{:.3g}", indent=2):
+    def to_json(self, fmt="{:.3g}", indent=2):
         """
         Convert a NumPy array to a JSON string.
 
@@ -88,7 +87,7 @@ class IoMatrix:
 
         return json.dumps(data, indent=indent)
 
-    def numpy_to_csv(self, filename, fmt="{:.3g}"):
+    def to_csv(self, filename, fmt="{:.3g}"):
         """
         Save a NumPy 2D array to a CSV file using a specified significant-digit format.
         Example fmt: "{:.3g}", "{:.5g}", "{:.2f}", etc.
@@ -104,7 +103,7 @@ class IoMatrix:
 
 
 
-def extract_matrices_from_latex_text(latex_content):
+def extract_arrays_from_latex_text(latex_content):
     """
     Extracts all LaTeX matrices from a string and converts them to NumPy arrays.
 
@@ -136,7 +135,7 @@ def extract_matrices_from_latex_text(latex_content):
 
 
 
-def extract_matrices_from_latex_file(file_path):
+def extract_arrays_from_latex_file(file_path):
     """
     Reads a LaTeX file and extracts all matrices as NumPy arrays.
 
@@ -150,7 +149,7 @@ def extract_matrices_from_latex_file(file_path):
         latex_content = f.read()
     
     # Use the text-based function
-    return extract_matrices_from_latex_text(latex_content)
+    return extract_arrays_from_latex_text(latex_content)
 
 
 def extract_arrays_from_json_text(json_content):
@@ -210,8 +209,8 @@ def extract_arrays_from_json_text(json_content):
 
         arr = np.array(rows, dtype=float)
 
-        if arr.ndim == 2 and arr.shape[0] == 1:
-            arr = arr.flatten()
+        # if arr.ndim == 2 and arr.shape[0] == 1:
+        #     arr = arr.flatten()
         arrays.append(IoMatrix(arr))
 
     return arrays
@@ -237,8 +236,24 @@ def extract_arrays_from_json_file(file_path):
 def extract_matrix_from_csv(file_path):
     """
     Load a CSV file into a NumPy 2D array.
+    
+    - Single line CSV → row vector [[1, 2, 3]]
+    - Single column CSV → column vector [[1], [2], [3]]
+    - Multiple rows/columns → 2D array
     """
     array = np.loadtxt(file_path, delimiter=",")
+    
     if array.size == 0:
         raise ValueError("Empty CSV file")
+    
+    # If 1D, decide row or column vector
+    if array.ndim == 1:
+        # Check if file has a single line (row)
+        with open(file_path, 'r') as f:
+            lines = f.readlines()
+        if len(lines) == 1:
+            array = array.reshape(1, -1)  # row vector
+        else:
+            array = array.reshape(-1, 1)  # column vector
+    
     return IoMatrix(array)
