@@ -114,9 +114,18 @@ Raises:
 ValueError
 ```
 
+## 6. Integration Tests
+
+These tests verify that a matrix or vector can be serialized and deserialized consistently through the full pipeline:
+
+**LaTeX → JSON → CSV → LaTeX**
+
+
 ---
 
 # Sample Input/Output Pairs
+
+## LaTeX
 
 | Description          | Input                           | Output                          |
 | -------------------- | ------------------------------- | ------------------------------- |
@@ -125,6 +134,27 @@ ValueError
 | NaN/inf handling     | `[[nan],[inf],[-inf]]`          | Uses `\\mathrm{NaN}`, `\\infty` |
 | Extract bmatrix      | LaTeX text containing `bmatrix` | Returns NumPy array             |
 | Invalid entry        | Matrix with `x`                 | Raises `ValueError`             |
+
+## JSON
+
+| Description         | Input                                  | Output                                    |
+| ------------------- | -------------------------------------- | ----------------------------------------- |
+| Basic 2×2 matrix    | `[[1.2345, 2.3456], [3.4567, 4.5678]]` | Nested JSON list: `[[1.23, 2.35], [3.46, 4.57]]`            |
+| NaN/inf             | `[nan, inf, -inf]`                     | JSON list containing `NaN`, `inf`, `-inf` |
+| Custom formatting   | `[1.2345]` with `fmt="{:.2f}"`         | `[[1.23]]`                                |
+| Parse JSON vector   | `"[[1,2,3]]"`                          | NumPy array `[[1.,2.,3.]]`                |
+| Parse nested arrays | `[[[1,2,3]], [[4,5],[6,7]]]`           | Two matrices returned                     |                 |
+
+## CSV
+
+| Description         | Input                                   | Output                             |
+| ------------------- | --------------------------------------- | ---------------------------------- |
+| Basic matrix to CSV | `[[1.23456, 7.89]]` with `fmt="{:.3g}"` | `1.23,7.89`                        |
+| Multi-row CSV       | `[[1.1, 2.2], [3.3, 4.4]]`              | `1.1,2.2 \n 3.3,4.4`               |
+| Read CSV matrix     | `1.0,2.0 \n 3.0,4.0`                    | `[[1.,2.],[3.,4.]]`                |
+| Read value          | `42`                                    | `42`                               |
+| Invalid numeric     | `1.0,abc,3.0`                           | error                              |
+| Wrong delimiter     | `1;2;3`                                 | error                              |
 
 ---
 
