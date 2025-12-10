@@ -4,21 +4,37 @@ import json
 import numbers
 
 class IoMatrix:
+    """
+    A wrapper class for a NumPy array with convenient methods to export
+    to LaTeX, JSON, and CSV formats.
+    """
     def __init__(self, nparray):
+        """
+        Initialize IoMatrix with a NumPy array.
+
+        Parameters:
+            nparray (np.ndarray): A 1D or 2D NumPy array.
+
+        Raises:
+            TypeError: If the input is not a NumPy array.
+        """
         if not isinstance(nparray, np.ndarray):
             raise TypeError("IoMatrix expects a NumPy array.")
         self.nparray = nparray
 
     def to_latex(self, fmt="{:.3g}", env="matrix"): #, arr, ):
         """
-        Convert a NumPy array to a LaTeX matrix/vector string.
+        Convert the stored NumPy array to a LaTeX matrix or vector.
 
         Parameters:
             fmt (str): Format string for each element (default: 3 significant digits).
-            env (str): LaTeX environment: matrix, pmatrix, bmatrix, vmatrix, Vmatrix.
+            env (str): LaTeX environment. Options: "matrix", "pmatrix", "bmatrix", "vmatrix", "Vmatrix".
 
         Returns:
-            str: LaTeX code.
+            str: LaTeX code representing the array.
+
+        Raises:
+            ValueError: If the array has more than 2 dimensions or the environment is invalid.
         """
 
         allowed_envs = {"matrix", "pmatrix", "bmatrix", "vmatrix", "Vmatrix"}
@@ -52,14 +68,17 @@ class IoMatrix:
     
     def to_json(self, fmt="{:.3g}", indent=2):
         """
-        Convert a NumPy array to a JSON string.
+        Convert the stored NumPy array to a JSON string.
 
         Parameters:
             fmt (str): Format string for each element (default: 3 significant digits).
-            indent (int): JSON indentation level for pretty-printing.
+            indent (int): Indentation level for pretty-printing JSON.
 
         Returns:
             str: JSON representation of the array.
+
+        Raises:
+            ValueError: If the array has more than 2 dimensions.
         """
 
         arr = self.nparray
@@ -89,8 +108,14 @@ class IoMatrix:
 
     def to_csv(self, filename, fmt="{:.3g}"):
         """
-        Save a NumPy 2D array to a CSV file using a specified significant-digit format.
-        Example fmt: "{:.3g}", "{:.5g}", "{:.2f}", etc.
+        Save the stored NumPy array to a CSV file.
+
+        Parameters:
+            filename (str): Path to the CSV file.
+            fmt (str): Format string for elements, e.g., "{:.3g}", "{:.2f}".
+
+        Raises:
+            ValueError: If the array cannot be saved to CSV.
         """
         # Convert Python's format-string style "{:.3g}" to NumPy's format "%.3g"
         numpy_fmt = fmt.replace("{:", "%").replace("}", "")
@@ -105,13 +130,13 @@ class IoMatrix:
 
 def extract_arrays_from_latex_text(latex_content):
     """
-    Extracts all LaTeX matrices from a string and converts them to NumPy arrays.
+    Extract all LaTeX matrices from a string and convert them to IoMatrix objects.
 
-    Args:
+    Parameters:
         latex_content (str): LaTeX document content.
 
     Returns:
-        list of IoMatrix: List of found matrices/vectors.
+        list of IoMatrix: List of matrices/vectors found in the LaTeX content.
     """
 
     # Remove comments to avoid parsing issues
@@ -137,13 +162,13 @@ def extract_arrays_from_latex_text(latex_content):
 
 def extract_arrays_from_latex_file(file_path):
     """
-    Reads a LaTeX file and extracts all matrices as NumPy arrays.
+    Extract all matrices from a LaTeX file.
 
-    Args:
-        file_path (str): Path to the LaTeX file.
+    Parameters:
+        file_path (str): Path to a LaTeX file.
 
     Returns:
-        list of IoMatrix: List of found matrices/vectors.
+        list of IoMatrix: List of matrices/vectors found in the file.
     """
     with open(file_path, 'r', encoding='utf-8') as f:
         latex_content = f.read()
@@ -154,16 +179,13 @@ def extract_arrays_from_latex_file(file_path):
 
 def extract_arrays_from_json_text(json_content):
     """
-    Expected format:
-      Vector: [[1, 2, 3]]
-      Matrix: [[1, 2], [3, 4]]
-      Multiple arrays: [ [[...]], [[...]] ]
-      
+    Extract arrays from a JSON string into IoMatrix objects.
+
     Parameters:
-        json_content (str): JSON text.
+        json_content (str): JSON-formatted text.
 
     Returns:
-        list of np.array: Each extracted NumPy array.
+        list of IoMatrix: Each extracted array wrapped in an IoMatrix.
     """
 
     # Parse JSON
@@ -219,13 +241,13 @@ def extract_arrays_from_json_text(json_content):
 
 def extract_arrays_from_json_file(file_path):
     """
-    Reads a JSON file and extracts arrays as NumPy arrays.
+    Read a JSON file and extract all arrays as IoMatrix objects.
 
     Parameters:
         file_path (str): Path to a JSON file.
 
     Returns:
-        list of IoMatrix: List of found matrices/vectors
+        list of IoMatrix: List of matrices/vectors found in the JSON file.
     """
 
     with open(file_path, "r", encoding="utf-8") as f:
@@ -235,11 +257,20 @@ def extract_arrays_from_json_file(file_path):
 
 def extract_matrix_from_csv(file_path):
     """
-    Load a CSV file into a NumPy 2D array.
-    
-    - Single line CSV → row vector [[1, 2, 3]]
-    - Single column CSV → column vector [[1], [2], [3]]
-    - Multiple rows/columns → 2D array
+    Load a CSV file into an IoMatrix object.
+
+    Single-line CSV → row vector
+    Single-column CSV → column vector
+    Multiple rows/columns → 2D array
+
+    Parameters:
+        file_path (str): Path to the CSV file.
+
+    Returns:
+        IoMatrix: Array read from the CSV file.
+
+    Raises:
+        ValueError: If the CSV file is empty.
     """
     array = np.loadtxt(file_path, delimiter=",")
     

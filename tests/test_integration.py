@@ -61,7 +61,7 @@ def test_end_to_end_matrix(tmp_path):
     np.array([[1.0, 2.5, -3.0]]),    # Row vector (2D, shape 1xN)
     np.array([[1.0], [2.5], [-3.0]]) # Column vector (2D, shape Nx1)
 ])
-def test_vector_end_to_end(tmp_path, vector):
+def test_end_to_end_vector(tmp_path, vector):
     """
     End-to-end test for vectors (row and column) through LaTeX → JSON → CSV → back to LaTeX.
     """
