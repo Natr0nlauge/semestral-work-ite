@@ -1,6 +1,7 @@
 import numpy as np
 import re
 import json
+import os
 import numbers
 
 class IoMatrix:
@@ -288,3 +289,101 @@ def extract_matrix_from_csv(file_path):
             array = array.reshape(-1, 1)  # column vector
     
     return IoMatrix(array)
+
+
+def extract_matrix_from_file(file_path):
+    """
+    Determine the file type from its extension and extract matrices accordingly.
+
+    Supported formats:
+        - .json  → extract_arrays_from_json_file
+        - .tex   → extract_arrays_from_latex_file
+        - .csv   → extract_matrix_from_csv
+
+    Parameters:
+        file_path (str): Path to the file.
+
+    Returns:
+        list[IoMatrix] or IoMatrix:
+            - JSON/TEX files may contain multiple arrays → returns a list of IoMatrix objects.
+            - CSV files represent a single array → returns a single IoMatrix.
+
+    Raises:
+        ValueError: If unsupported extension or file not found.
+    """
+
+    if not os.path.isfile(file_path):
+        raise ValueError(f"File not found: {file_path}")
+
+    _, ext = os.path.splitext(file_path)
+    ext = ext.lower()
+
+    if ext == ".json":
+        return extract_arrays_from_json_file(file_path)
+
+    elif ext in {".tex", ".latex"}:
+        return extract_arrays_from_latex_file(file_path)
+
+    elif ext == ".csv":
+        return extract_matrix_from_csv(file_path)
+
+    else:
+        raise ValueError(
+            f"Unsupported file extension '{ext}'. "
+            "Supported types are: .json, .tex, .csv"
+        )
+    
+def run_from_command_line():
+    """
+    Command-line interface:
+        1. Ask user for a file path.
+        2. Parse the file into IoMatrix object(s).
+        3. Ask user for an output format: latex, json, csv.
+        4. Print converted matrices in that format.
+    """
+
+    file_path = input("Enter the path to the file (.json, .tex, .csv): ").strip()
+
+    try:
+        result = extract_matrix_from_file(file_path)
+
+        # Normalize result → always a list of IoMatrix
+        matrices = result if isinstance(result, list) else [result]
+        print(f"Found matrices: {len(result)}")
+
+        if not matrices:
+            print("No matrices found.")
+            return
+
+        # Ask for output format
+        output_format = input("Enter output format (latex / json / csv): ").strip().lower()
+
+        if output_format not in {"latex", "json", "csv"}:
+            print(f"Invalid format '{output_format}'. Must be latex, json, or csv.")
+            return
+
+        print(f"\nConverted {len(matrices)} matrix/matrices:\n")
+
+        for i, M in enumerate(matrices, start=1):
+            print(f"--- Matrix {i} ---")
+
+            if output_format == "latex":
+                print(M.to_latex())
+
+            elif output_format == "json":
+                print(M.to_json())
+
+            elif output_format == "csv":
+                # Print CSV as a string instead of writing to file
+                import io
+                buffer = io.StringIO()
+                # Use same formatting style as np.savetxt
+                fmt = "%.3g"
+                np.savetxt(buffer, M.nparray, delimiter=",", fmt=fmt)
+                print(buffer.getvalue())
+
+            print()  # blank line for separation
+
+    except Exception as e:
+        print(f"\nError: {e}")
+
