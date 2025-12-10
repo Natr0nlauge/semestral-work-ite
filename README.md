@@ -30,7 +30,7 @@ Optional dependencies (if saving to files in specific formats):
 1. **Clone the repository**:
 
 ```bash
-git clone https://github.com/yourusername/matrix-io.git
+git clone https://github.com/Natr0nlauge/matrix-io.git
 cd matrix-io
 ````
 
